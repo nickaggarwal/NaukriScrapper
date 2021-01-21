@@ -27,19 +27,19 @@ def create_google_url(query, site=''):
 class GoogleSpider(scrapy.Spider):
     name = 'google'
     allowed_domains = ['api.scraperapi.com']
-    custom_settings = {'CLOSESPIDER_PAGECOUNT': 200, 'ROBOTSTXT_OBEY': False, 'DOWNLOAD_TIMEOUT': 1000,
-                       'CONCURRENT_REQUESTS': 16, 'AUTOTHROTTLE_ENABLED': False,
-                       'CONCURRENT_REQUESTS_PER_DOMAIN': 16,
-                       'RETRY_TIMES': 5, 'RETRY_HTTP_CODES': ['429', '503']}
+    custom_settings = {'CLOSESPIDER_PAGECOUNT': 30, 'ROBOTSTXT_OBEY': False, 'DOWNLOAD_TIMEOUT': 1000,
+                       'CONCURRENT_REQUESTS': 5, 'AUTOTHROTTLE_ENABLED': False,
+                       'CONCURRENT_REQUESTS_PER_DOMAIN': 5,
+                       'RETRY_TIMES': 5, 'RETRY_HTTP_CODES': ['429']}
     proxy = 'http://7c5dc75a899a4f6498d3f238929a3b33:@proxy.crawlera.com:8010/'
 
     def start_requests(self):
-        in_file = open('DataExtracted.csv', 'r')
+        in_file = open('DataExtracted.csv', 'r', encoding="utf8", errors='ignore')
         file_rows = in_file.read().split('\n')
         for file_row in file_rows[1:]:
             data = file_row.split(',')
             query = 'site:http://linkedin.com/in/ intitle:"{}" AND "{}" intext:("gmail.com" OR "yahoo.com" OR "hotmail.com")'.format(data[0], data[5].split('and')[0].strip())
-            query2 = 'site:http://linkedin.com/in/ intitle:"{}" AND "{}")'.format(data[0], data[5].split('and')[0].strip())
+            query2 = 'linkedin {} {} {}'.format(data[0], data[4], data[5] )
             url = create_google_url(query)
             url2 = create_google_url(query2)
             headers = {'X-Crawlera-Cookies': 'disable'}
