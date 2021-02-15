@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 
 
 headers_csv = ["Name", "email", "phone", "linkedIn", "Experience", "Salary", "Location", "Designation", "Company",
-               "College", "google_link"]
+               "College", "google_link", "skills"]
 
 fileout = open('data.csv', 'w', newline='', encoding='utf-8')
 writer = csv.DictWriter(fileout, fieldnames=headers_csv)
@@ -27,9 +27,9 @@ def create_google_url(query, site=''):
 class GoogleSpider(scrapy.Spider):
     name = 'google'
     allowed_domains = ['api.scraperapi.com']
-    custom_settings = {'CLOSESPIDER_PAGECOUNT': 30, 'ROBOTSTXT_OBEY': False, 'DOWNLOAD_TIMEOUT': 1000,
-                       'CONCURRENT_REQUESTS': 5, 'AUTOTHROTTLE_ENABLED': False,
-                       'CONCURRENT_REQUESTS_PER_DOMAIN': 5,
+    custom_settings = {'CLOSESPIDER_PAGECOUNT': 150000, 'ROBOTSTXT_OBEY': False, 'DOWNLOAD_TIMEOUT': 1000,
+                       'CONCURRENT_REQUESTS': 16, 'AUTOTHROTTLE_ENABLED': False,
+                       'CONCURRENT_REQUESTS_PER_DOMAIN': 16,
                        'RETRY_TIMES': 5, 'RETRY_HTTP_CODES': ['429']}
     proxy = 'http://7c5dc75a899a4f6498d3f238929a3b33:@proxy.crawlera.com:8010/'
 
@@ -38,15 +38,18 @@ class GoogleSpider(scrapy.Spider):
         file_rows = in_file.read().split('\n')
         for file_row in file_rows[1:]:
             data = file_row.split(',')
-            query = 'site:http://linkedin.com/in/ intitle:"{}" AND "{}" intext:("gmail.com" OR "yahoo.com" OR "hotmail.com")'.format(data[0], data[5].split('and')[0].strip())
-            query2 = 'linkedin {} {} {}'.format(data[0], data[4], data[5] )
-            url = create_google_url(query)
-            url2 = create_google_url(query2)
-            headers = {'X-Crawlera-Cookies': 'disable'}
+            try:
+                query = 'site:http://linkedin.com/in/ intitle:"{}" AND "{}" intext:("gmail.com" OR "yahoo.com" OR "hotmail.com")'.format(data[0], data[5].split('and')[0].strip())
+                query2 = 'linkedin {} {} {}'.format(data[0], data[4], data[5] )
+                url = create_google_url(query)
+                url2 = create_google_url(query2)
+                #headers = {'X-Crawlera-Cookies': 'disable'}
 
-            yield scrapy.Request(url, callback=self.parse, meta={'data': data, 'proxy': self.proxy, 'url2': url2,
-                                                                 },
-                                 headers=headers)
+                yield scrapy.Request(url, callback=self.parse, meta={'data': data, 'proxy': self.proxy, 'url2': url2,
+                                                                     },
+                                     )
+            except Exception as ex:
+                print("Could not Parse")
 
     def parse(self, response):
         data = response.meta['data']
@@ -62,6 +65,7 @@ class GoogleSpider(scrapy.Spider):
             item['Company'] = data[5]
             item['College'] = data[6]
             item['google_link'] = response.url
+            item['skills'] = data[8]
 
             text = ' '.join(result.css('::text').extract())
             emails = [v for v in text.replace('@ ', '@').split(' ') if '@' in v and '.' in v]
